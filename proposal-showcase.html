@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Business Proposals | HLSA SecOps</title>
+    <meta name="description" content="Every client gets a custom, animated proposal — not a PDF or Google Doc. Built by Hector Bermudez at HLSA SecOps.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #1E2124;
+            --text: #FDF8F0;
+            --heading: #FFFFFF;
+            --border: rgba(255, 255, 255, 0.08);
+            --blue: #4A9EFF;
+            --red: #E54545;
+            --green: #34C759;
+            --font-display: 'DM Serif Display', serif;
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-hand: 'Caveat', cursive;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 18px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Noise overlay */
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9999; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Custom cursor */
+        #cursor-dot {
+            position: fixed; top: 0; left: 0; width: 12px; height: 12px;
+            border-radius: 50%; background: #ffffff;
+            transform: translate(-50%, -50%);
+            pointer-events: none; z-index: 99999;
+            transition: width 0.6s cubic-bezier(0.16,1,0.3,1), height 0.6s cubic-bezier(0.16,1,0.3,1), background 0.6s cubic-bezier(0.16,1,0.3,1), backdrop-filter 0.3s, border 0.3s;
+            box-shadow: 0 0 15px 2px rgba(255,255,255,0.4);
+        }
+        #cursor-dot.hover-glass {
+            width: 50px !important; height: 50px !important;
+            background: rgba(255,255,255,0.06) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            box-shadow: none !important;
+        }
+
+        /* Layout */
+        .section { position: relative; width: 100%; padding: 100px 0; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+        .container { width: 100%; max-width: 960px; padding: 0 40px; position: relative; z-index: 3; }
+        .wide { max-width: 1100px; }
+
+        /* Typography */
+        h1, h2, h3, h4, h5 { font-family: var(--font-heading); color: var(--heading); font-weight: 800; letter-spacing: -0.02em; }
+        h1 { font-family: var(--font-display); font-size: 72px; font-weight: 400; line-height: 1.05; margin-bottom: 24px; }
+        h2 { font-family: var(--font-display); font-size: 56px; font-weight: 400; margin-bottom: 32px; position: relative; display: inline-block; }
+        h2 .h2-line { display: block; width: 0; height: 2px; background: rgba(255,255,255,0.4); margin-top: 10px; transition: width 1s cubic-bezier(0.16,1,0.3,1); }
+        h2.line-visible .h2-line { width: 100%; }
+        h3 { font-size: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 20px; }
+
+        .subtitle { font-size: 22px; color: rgba(253,248,240,0.7); line-height: 1.5; max-width: 640px; }
+        .hand { font-family: var(--font-hand); }
+        .blue { color: var(--blue); }
+        .green { color: var(--green); }
+        .red { color: var(--red); }
+        .label { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 16px; }
+
+        /* Glass card */
+        .glass-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 24px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: background 0.6s cubic-bezier(0.16,1,0.3,1), border-color 0.6s cubic-bezier(0.16,1,0.3,1), box-shadow 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+        }
+        .glass-card:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-4px);
+        }
+        .glass-card.glow-blue:hover { box-shadow: 0 0 20px 2px rgba(74,158,255,0.15), 0 0 60px 4px rgba(74,158,255,0.08), 0 10px 30px -10px rgba(0,0,0,0.5); border-color: rgba(74,158,255,0.3); }
+        .glass-card.glow-green:hover { box-shadow: 0 0 20px 2px rgba(52,199,89,0.15), 0 0 60px 4px rgba(52,199,89,0.08), 0 10px 30px -10px rgba(0,0,0,0.5); border-color: rgba(52,199,89,0.3); }
+        .glass-card.glow-red:hover { box-shadow: 0 0 20px 2px rgba(229,69,69,0.15), 0 0 60px 4px rgba(229,69,69,0.08), 0 10px 30px -10px rgba(0,0,0,0.5); border-color: rgba(229,69,69,0.3); }
+
+        /* Pulse dots */
+        .pulse-dot { width: 10px; height: 10px; border-radius: 50%; position: relative; display: inline-block; flex-shrink: 0; }
+        .pulse-dot::after {
+            content: ""; position: absolute; top: 50%; left: 50%;
+            width: 10px; height: 10px; border-radius: 50%;
+            transform: translate(-50%,-50%);
+            animation: dot-ping 3s ease-out infinite;
+        }
+        .pulse-dot.blue { background: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,0.4); }
+        .pulse-dot.blue::after { background: var(--blue); }
+        .pulse-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(52,199,89,0.4); }
+        .pulse-dot.green::after { background: var(--green); }
+        .pulse-dot.red { background: var(--red); box-shadow: 0 0 8px rgba(229,69,69,0.4); }
+        .pulse-dot.red::after { background: var(--red); }
+        @keyframes dot-ping {
+            0% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+            30% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+            100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+        }
+
+        /* ──────────── SPLASH ──────────── */
+        #splash {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg); z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding-bottom: 12vh;
+            clip-path: circle(150% at 50% 40%);
+        }
+        .splash-pre { font-size: 16px; color: rgba(253,248,240,0.45); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; opacity: 0; }
+        .splash-name { font-family: var(--font-display); font-size: 72px; color: var(--heading); overflow: hidden; }
+        .splash-name span { display: inline-block; transform: translateY(100%); }
+        .splash-line { width: 0; height: 2px; background: #fff; margin-top: 18px; box-shadow: 0 0 20px 4px rgba(255,255,255,0.4), 0 0 60px 8px rgba(255,255,255,0.15); }
+
+        /* ──────────── HERO ──────────── */
+        #hero { padding-top: 160px; padding-bottom: 120px; text-align: center; }
+        #hero .container { display: flex; flex-direction: column; align-items: center; }
+        #hero h1 { max-width: 800px; }
+        #hero .subtitle { text-align: center; margin: 0 auto 40px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 10px 24px; border-radius: 100px;
+            background: rgba(74,158,255,0.08); border: 1px solid rgba(74,158,255,0.2);
+            font-size: 14px; font-weight: 600; color: var(--blue); letter-spacing: 0.04em;
+            margin-bottom: 32px;
+        }
+
+        /* ──────────── BROWSER MOCKUP ──────────── */
+        .browser-frame {
+            width: 100%; max-width: 800px; margin: 0 auto;
+            border-radius: 16px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6), 0 0 60px rgba(74,158,255,0.06);
+        }
+        .browser-bar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .browser-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .browser-dot.r { background: var(--red); }
+        .browser-dot.y { background: #FBBF24; }
+        .browser-dot.g { background: var(--green); }
+        .browser-url {
+            flex: 1; margin-left: 12px; padding: 6px 16px;
+            border-radius: 8px; background: rgba(255,255,255,0.06);
+            font-size: 13px; color: rgba(253,248,240,0.4);
+            font-family: var(--font-body);
+        }
+        .browser-content {
+            height: 420px; overflow: hidden; position: relative;
+            display: flex; flex-direction: column;
+        }
+        .browser-slide {
+            min-height: 420px; width: 100%; padding: 48px 40px;
+            display: flex; flex-direction: column; justify-content: center;
+            position: absolute; top: 0; left: 0;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .browser-slide.active { opacity: 1; transform: translateY(0); }
+        .slide-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 14px; }
+        .slide-title { font-family: var(--font-display); font-size: 36px; color: var(--heading); margin-bottom: 14px; }
+        .slide-text { font-size: 16px; color: rgba(253,248,240,0.6); line-height: 1.6; max-width: 520px; }
+        .slide-mockup-row { display: flex; gap: 12px; margin-top: 16px; }
+        .slide-pill {
+            padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(253,248,240,0.6);
+        }
+        .slide-pill.accent { background: rgba(74,158,255,0.1); border-color: rgba(74,158,255,0.25); color: var(--blue); }
+        .slide-bar {
+            height: 6px; border-radius: 3px; margin-top: 16px;
+            background: linear-gradient(90deg, var(--blue) 0%, var(--green) 60%, rgba(255,255,255,0.06) 60%);
+        }
+        .browser-indicators {
+            display: flex; justify-content: center; gap: 8px; padding: 14px;
+            background: rgba(255,255,255,0.02); border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .indicator {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); transition: background 0.3s, transform 0.3s;
+        }
+        .indicator.active { background: var(--blue); transform: scale(1.3); }
+
+        /* ──────────── FEATURES GRID ──────────── */
+        .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .feature-card { padding: 32px; }
+        .feature-icon { font-size: 32px; margin-bottom: 16px; display: block; }
+        .feature-title { font-size: 18px; font-weight: 700; color: var(--heading); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .feature-desc { font-size: 15px; color: rgba(253,248,240,0.6); line-height: 1.5; margin-bottom: 0; }
+
+        /* ──────────── STEPS ──────────── */
+        .steps { display: flex; gap: 28px; counter-reset: step; }
+        .step-card {
+            flex: 1; padding: 36px 32px; text-align: center;
+            counter-increment: step;
+        }
+        .step-card::before {
+            content: counter(step);
+            display: flex; align-items: center; justify-content: center;
+            width: 52px; height: 52px; border-radius: 50%;
+            background: rgba(74,158,255,0.1); border: 1px solid rgba(74,158,255,0.25);
+            font-family: var(--font-display); font-size: 24px; color: var(--blue);
+            margin: 0 auto 20px;
+        }
+        .step-title { font-size: 18px; font-weight: 700; color: var(--heading); margin-bottom: 10px; }
+        .step-desc { font-size: 15px; color: rgba(253,248,240,0.6); line-height: 1.5; margin-bottom: 0; }
+
+        /* ──────────── CTA ──────────── */
+        #cta { text-align: center; padding: 120px 0; }
+        #cta .container { display: flex; flex-direction: column; align-items: center; }
+        .cta-box {
+            padding: 60px; border-radius: 24px;
+            background: rgba(74,158,255,0.04);
+            border: 1px solid rgba(74,158,255,0.15);
+            max-width: 700px; width: 100%;
+        }
+        .cta-box h2 { font-size: 48px; margin-bottom: 20px; }
+        .cta-box .subtitle { text-align: center; margin-bottom: 36px; }
+        .cta-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 18px 40px; border-radius: 14px;
+            background: var(--blue); color: #fff;
+            font-size: 17px; font-weight: 700;
+            text-decoration: none; border: none;
+            transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s;
+        }
+        .cta-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 40px rgba(74,158,255,0.3);
+        }
+        .cta-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* ──────────── FOOTER ──────────── */
+        footer {
+            padding: 40px; text-align: center;
+            border-top: 1px solid var(--border);
+            font-size: 14px; color: rgba(253,248,240,0.35);
+        }
+        footer strong { color: rgba(253,248,240,0.6); }
+        .footer-bilingual { font-family: var(--font-hand); font-size: 18px; color: rgba(253,248,240,0.25); margin-top: 8px; }
+
+        /* ──────────── SEPARATOR ──────────── */
+        .sep { width: 60px; height: 2px; background: rgba(255,255,255,0.1); margin: 0 auto 40px; border-radius: 1px; }
+
+        /* ──────────── RESPONSIVE ──────────── */
+        @media (max-width: 768px) {
+            h1 { font-size: 44px; }
+            h2 { font-size: 36px; }
+            .container { padding: 0 24px; }
+            .section { padding: 60px 0; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps { flex-direction: column; gap: 16px; }
+            .browser-content { height: 340px; }
+            .browser-slide { min-height: 340px; padding: 32px 24px; }
+            .slide-title { font-size: 26px; }
+            .cta-box { padding: 40px 24px; }
+            .cta-box h2 { font-size: 32px; }
+            .splash-name { font-size: 48px; }
+            #hero { padding-top: 100px; padding-bottom: 80px; }
+            .glass-card { padding: 28px; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 34px; }
+            h2 { font-size: 28px; }
+            .subtitle { font-size: 17px; }
+            .browser-frame { border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="noise"></div>
+<div id="cursor-dot"></div>
+
+<!-- ═══════════ SPLASH ═══════════ -->
+<div id="splash">
+    <div class="splash-pre">HLSA SecOps</div>
+    <div class="splash-name"><span>Proposals,&nbsp;</span><span>Reimagined.</span></div>
+    <div class="splash-line"></div>
+</div>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section id="hero" class="section">
+    <div class="container">
+        <div class="hero-badge">
+            <span class="pulse-dot blue"></span>
+            Portfolio Showcase
+        </div>
+        <h1>Interactive Business Proposals</h1>
+        <p class="subtitle">Every client gets a custom, animated proposal &mdash; not a PDF or Google Doc. This is how we set the tone before the project even begins.</p>
+        <div class="browser-frame" id="mockup">
+            <div class="browser-bar">
+                <div class="browser-dot r"></div>
+                <div class="browser-dot y"></div>
+                <div class="browser-dot g"></div>
+                <div class="browser-url">hlsa-secops.com/proposal/your-business</div>
+            </div>
+            <div class="browser-content">
+                <div class="browser-slide active" data-index="0">
+                    <div class="slide-label">Splash Screen</div>
+                    <div class="slide-title">Prepared exclusively for<br>Your Business Name</div>
+                    <div class="slide-text">A cinematic opening that greets the client by name with smooth reveal animations.</div>
+                </div>
+                <div class="browser-slide" data-index="1">
+                    <div class="slide-label">Challenge & Solution</div>
+                    <div class="slide-title">We Diagnose, Then Prescribe</div>
+                    <div class="slide-text">Red-flagged pain points transition into green-lit solutions. Visual storytelling, not bullet points.</div>
+                    <div class="slide-mockup-row">
+                        <span class="slide-pill"><span class="red">&#9679;</span>&ensp;Missed calls</span>
+                        <span class="slide-pill accent"><span class="green">&#9679;</span>&ensp;AI Voice Agent</span>
+                    </div>
+                </div>
+                <div class="browser-slide" data-index="2">
+                    <div class="slide-label">Scope & Timeline</div>
+                    <div class="slide-title">Interactive Cards + Animated Phases</div>
+                    <div class="slide-text">Sticky-stacking scope cards and a visual timeline that builds as you scroll.</div>
+                    <div class="slide-bar"></div>
+                </div>
+                <div class="browser-slide" data-index="3">
+                    <div class="slide-label">Investment & Signature</div>
+                    <div class="slide-title">Transparent Pricing. One Click to Start.</div>
+                    <div class="slide-text">Milestone-based payment breakdown with a built-in digital signature &mdash; no third-party tools needed.</div>
+                    <div class="slide-mockup-row">
+                        <span class="slide-pill accent">Sign & Accept</span>
+                        <span class="slide-pill">Export PDF</span>
+                    </div>
+                </div>
+            </div>
+            <div class="browser-indicators">
+                <div class="indicator active" data-index="0"></div>
+                <div class="indicator" data-index="1"></div>
+                <div class="indicator" data-index="2"></div>
+                <div class="indicator" data-index="3"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ WHAT'S INSIDE ═══════════ -->
+<section id="features" class="section">
+    <div class="container wide">
+        <div class="label">What's Inside Every Proposal</div>
+        <h2>Built to Impress, Designed to Convert<span class="h2-line"></span></h2>
+        <p class="subtitle" style="margin-bottom:48px;">Each proposal is a fully custom, single-page web experience with scroll-triggered animations, interactive elements, and zero templates.</p>
+
+        <div class="features-grid">
+            <div class="glass-card feature-card glow-blue" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot blue"></span>
+                    Personalized Splash Screen
+                </div>
+                <p class="feature-desc">The client's name appears in a cinematic reveal with glowing line animation &mdash; setting the tone instantly.</p>
+            </div>
+            <div class="glass-card feature-card glow-red" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot red"></span>
+                    Challenge & Solution Analysis
+                </div>
+                <p class="feature-desc">Pain points are surfaced in red, then solved with green-lit solutions. Each one animated on scroll.</p>
+            </div>
+            <div class="glass-card feature-card glow-blue" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot blue"></span>
+                    Interactive Scope of Work
+                </div>
+                <p class="feature-desc">Sticky-stacking cards with inline SVG icons. Each deliverable feels tangible, not buried in a list.</p>
+            </div>
+            <div class="glass-card feature-card glow-blue" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot blue"></span>
+                    Animated Timeline
+                </div>
+                <p class="feature-desc">A scroll-driven progress bar with phased milestones that builds as the client reads through.</p>
+            </div>
+            <div class="glass-card feature-card glow-green" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot green"></span>
+                    Investment Breakdown
+                </div>
+                <p class="feature-desc">Clear milestone-based pricing with visual progress. No hidden fees, no ambiguity.</p>
+            </div>
+            <div class="glass-card feature-card glow-green" data-anim>
+                <div class="feature-title">
+                    <span class="pulse-dot green"></span>
+                    Digital Signature & PDF Export
+                </div>
+                <p class="feature-desc">Built-in acceptance flow with canvas signature. One-click PDF export for their records.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ HOW IT WORKS ═══════════ -->
+<section id="process" class="section">
+    <div class="container">
+        <div style="text-align:center;">
+            <div class="label">How It Works</div>
+            <h2>From Call to Kickoff<span class="h2-line"></span></h2>
+            <p class="subtitle" style="text-align:center; margin: 0 auto 48px;">Three steps. No back-and-forth. No stale documents.</p>
+        </div>
+        <div class="steps">
+            <div class="glass-card step-card glow-blue" data-anim>
+                <div class="step-title">Discovery Call</div>
+                <p class="step-desc">We talk through your goals, challenges, and timeline. I learn your business so the proposal speaks your language.</p>
+            </div>
+            <div class="glass-card step-card glow-blue" data-anim>
+                <div class="step-title">Custom Proposal Built</div>
+                <p class="step-desc">Within 48 hours, you receive a link to your own interactive proposal &mdash; hosted, animated, and personalized.</p>
+            </div>
+            <div class="glass-card step-card glow-green" data-anim>
+                <div class="step-title">Review, Sign, Begin</div>
+                <p class="step-desc">Read through at your own pace. When you're ready, sign digitally and we kick off immediately.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ WHY THIS MATTERS ═══════════ -->
+<section id="why" class="section">
+    <div class="container" style="text-align:center;">
+        <div class="label">Why This Matters</div>
+        <h2>Your Proposal Is Your First Impression<span class="h2-line"></span></h2>
+        <p class="subtitle" style="text-align:center; margin:0 auto 48px;">If the proposal feels generic, the work will too. This is how I show clients that every detail matters &mdash; before the project even starts.</p>
+        <div class="glass-card glow-blue" style="padding:36px 48px; display:inline-block; text-align:left; max-width:600px; width:100%;" data-anim>
+            <p style="font-family:var(--font-hand); font-size:28px; color:rgba(253,248,240,0.8); margin-bottom:16px; line-height:1.4;">"I've never received a proposal like this before. It felt like the project had already started."</p>
+            <p style="font-size:14px; color:rgba(253,248,240,0.4); margin-bottom:0;">&mdash; Actual client reaction</p>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section id="cta" class="section">
+    <div class="container">
+        <div class="cta-box" data-anim>
+            <h2>Ready to See Yours?<span class="h2-line"></span></h2>
+            <p class="subtitle" style="text-align:center; margin:0 auto 36px;">Let's talk about your project. The first thing you'll receive is a proposal that sets the standard for everything that follows.</p>
+            <a href="mailto:hector@hlsa-secops.com" class="cta-btn">
+                Start a Conversation
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+    <p style="margin-bottom:6px;">Built by <strong>Hector Bermudez</strong> &nbsp;|&nbsp; <strong>HLSA SecOps</strong></p>
+    <p class="footer-bilingual" style="margin-bottom:0;">Disponible en espa&ntilde;ol &nbsp;&bull;&nbsp; Available in English</p>
+</footer>
+
+<script>
+(function() {
+    /* ─── Cursor ─── */
+    const cursor = document.getElementById('cursor-dot');
+    let cx = -100, cy = -100;
+    document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+    (function tick() {
+        cursor.style.left = cx + 'px';
+        cursor.style.top = cy + 'px';
+        requestAnimationFrame(tick);
+    })();
+    document.querySelectorAll('.glass-card, .cta-btn, a').forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('hover-glass'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('hover-glass'));
+    });
+    /* Hide custom cursor on touch devices */
+    if ('ontouchstart' in window) cursor.style.display = 'none';
+
+    /* ─── Splash ─── */
+    const splash = document.getElementById('splash');
+    const tl = gsap.timeline({ delay: 0.3 });
+
+    tl.to('.splash-pre', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+      .to('.splash-name span', { y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.12 }, '-=0.2')
+      .to('.splash-line', { width: 180, duration: 0.6, ease: 'power2.inOut' }, '-=0.3')
+      .to(splash, {
+          clipPath: 'circle(0% at 50% 40%)',
+          duration: 1, ease: 'power3.inOut', delay: 0.8,
+          onComplete: () => { splash.style.display = 'none'; }
+      });
+
+    /* ─── GSAP ScrollTrigger setup ─── */
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* Animate h2 lines */
+    document.querySelectorAll('h2').forEach(h2 => {
+        ScrollTrigger.create({
+            trigger: h2, start: 'top 80%',
+            onEnter: () => h2.classList.add('line-visible')
+        });
+    });
+
+    /* Animate cards */
+    document.querySelectorAll('[data-anim]').forEach((el, i) => {
+        gsap.from(el, {
+            y: 40, opacity: 0, duration: 0.7,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 85%' }
+        });
+    });
+
+    /* Hero elements stagger */
+    gsap.from('#hero .hero-badge', { y: 20, opacity: 0, duration: 0.6, delay: 2.6, ease: 'power3.out' });
+    gsap.from('#hero h1', { y: 30, opacity: 0, duration: 0.7, delay: 2.8, ease: 'power3.out' });
+    gsap.from('#hero .subtitle', { y: 20, opacity: 0, duration: 0.6, delay: 3.0, ease: 'power3.out' });
+    gsap.from('#hero .browser-frame', { y: 40, opacity: 0, duration: 0.8, delay: 3.2, ease: 'power3.out' });
+
+    /* ─── Browser mockup slide rotation ─── */
+    const slides = document.querySelectorAll('.browser-slide');
+    const indicators = document.querySelectorAll('.indicator');
+    let current = 0;
+
+    function goToSlide(n) {
+        slides[current].classList.remove('active');
+        indicators[current].classList.remove('active');
+        current = n;
+        slides[current].classList.add('active');
+        indicators[current].classList.add('active');
+    }
+
+    setInterval(() => { goToSlide((current + 1) % slides.length); }, 3500);
+
+    indicators.forEach(ind => {
+        ind.addEventListener('click', () => goToSlide(+ind.dataset.index));
+    });
+
+    /* ─── Section labels fade in ─── */
+    document.querySelectorAll('.label').forEach(el => {
+        gsap.from(el, { y: 12, opacity: 0, duration: 0.5, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 88%' } });
+    });
+
+    document.querySelectorAll('.subtitle').forEach(el => {
+        gsap.from(el, { y: 16, opacity: 0, duration: 0.6, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 86%' } });
+    });
+
+})();
+</script>
+</body>
+</html>
