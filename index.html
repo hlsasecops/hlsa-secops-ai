@@ -647,8 +647,41 @@
         .case-description {
             color: var(--gray-400);
             font-size: 0.95rem;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             line-height: 1.7;
+        }
+
+        .case-workflow {
+            margin-bottom: 28px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .case-workflow img {
+            width: 100%;
+            height: auto;
+            display: block;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        .case-workflow:hover img {
+            opacity: 1;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        @media (min-width: 640px) {
+            .workflow-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .case-stats {
@@ -1213,6 +1246,14 @@
                     <span class="case-industry">Dental Practice</span>
                     <h3 class="case-title">AI Voice Agent + Appointment Booking</h3>
                     <p class="case-description">Deployed 24/7 AI voice system for Charming Smiles of Ocoee—answers calls, looks up patients, checks real-time availability for 6 providers, and books appointments instantly via OpenDental integration.</p>
+
+                    <div class="case-workflow">
+                        <div class="workflow-grid">
+                            <img src="assets/images/case-studies/retellai-prod.png" alt="Retell AI Voice Agent Configuration" loading="lazy">
+                            <img src="assets/images/case-studies/caller-info-prod.png" alt="n8n Caller Info Workflow" loading="lazy">
+                        </div>
+                    </div>
+
                     <div class="case-stats">
                         <div class="stat">
                             <div class="stat-value"><span class="counter" data-target="24">0</span>/7</div>
